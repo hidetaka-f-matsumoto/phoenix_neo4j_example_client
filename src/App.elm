@@ -11,6 +11,7 @@ import Json.Decode as JD
 
 
 port initMapView : (List Node) -> Cmd msg
+port showRoute : (List Route) -> Cmd msg
 port doSearch : (List Node -> msg) -> Sub msg
 
 
@@ -49,7 +50,8 @@ type alias Node =
 
 
 type alias Route =
-  { node_ids: List String
+  { color: String
+  , node_ids: List String
   , total_time: Int
   }
 
@@ -77,7 +79,7 @@ update msg model =
     GotRoutes result ->
       case result of
         Ok routes ->
-          ({ model | state = Success routes }, Cmd.none)
+          ({ model | state = Success routes }, showRoute routes)
 
         Err _ ->
           ({ model | state = Failure }, Cmd.none)
@@ -130,15 +132,15 @@ viewSearchResult model =
             total_time = r.total_time |> String.fromInt
 
           in
-            li []
+            li [ style "color" r.color ]
               [ text "total_time: "
               , text total_time
-              , text "min, routing: "
+              , text "min / routing: "
               , text routing
               ]
 
       in
-        div []
+        div [ style "background-color" "#1f1f1f" ]
           [ ul [] (List.map element routes)
           ]
 
@@ -162,7 +164,7 @@ getRoutes nodes =
   let
     from = getFromNodeId nodes
     to = getToNodeId nodes
-    query = "from=" ++ from ++ "&to=" ++ to ++ "&limit=3"
+    query = "from=" ++ from ++ "&to=" ++ to
     url = "http://localhost:4000/routes/search?" ++ query
   in
     Http.get
@@ -192,8 +194,9 @@ nodeDecoder =
 
 routeDecoder : JD.Decoder Route
 routeDecoder =
-  JD.map2
+  JD.map3
     Route
+    (JD.field "color" JD.string)
     (JD.field "node_ids" (JD.list JD.string))
     (JD.field "total_time" JD.int)
 

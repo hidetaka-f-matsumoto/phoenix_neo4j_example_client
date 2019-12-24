@@ -30,9 +30,9 @@
 
       app.ports.initMapView.subscribe(args => {
         console.log('initMapView');
-        const nodes = args;
         console.log(nodes);
 
+        nodes = args;
         selectedNodes = [];
 
         mapView.setView([33.536710, 130.561836], 15);
@@ -50,19 +50,40 @@
               if (selectedNodes.includes(this_node)) {
                 selectedNodes = selectedNodes.filter(l => l != this_node);
                 this.setIcon(pointIcon);
+                routeLayerGroup.clearLayers();
               } else {
+                if (selectedNodes.length >= 2) {
+                  alert('選択済みの node を解除してから、再度選択して下さい');
+                  return;
+                }
                 selectedNodes.push(this_node);
                 this.setIcon(selectedPointIcon);
-              }
-              if (selectedNodes.length == 2) {
-                console.log('doSearch', selectedNodes);
-                app.ports.doSearch.send(selectedNodes);
+                if (selectedNodes.length == 2) {
+                  console.log('doSearch', selectedNodes);
+                  app.ports.doSearch.send(selectedNodes);
+                }
               }
             })
             .setIcon(pointIcon);
         }
       });
 
+      app.ports.showRoute.subscribe(args => {
+        console.log('showRoute');
+        console.log(args);
+
+        const routes = args;
+        for (let route of routes.reverse()) {
+          let geometry = route.node_ids.map(node_id => {
+            return nodes.find(node => node.id === node_id).location;
+          });
+          new L.Polyline(geometry, {
+            color: route.color
+          }).addTo(routeLayerGroup);
+        }
+      });
+
+      let nodes = [];
       let selectedNodes = [];
 
       const mapView = L.map('map').setView([35.681236, 139.767125], 13);
@@ -91,9 +112,11 @@
         Mapbox: mapbox
       };
 
-      const nodeLayerGroup = L.layerGroup();
+      const nodeLayerGroup = L.layerGroup(),
+            routeLayerGroup = L.layerGroup();
 
       nodeLayerGroup.addTo(mapView);
+      routeLayerGroup.addTo(mapView);
 
       const pointIcon = L.icon({
         iconUrl: './res/point.png',
@@ -110,7 +133,8 @@
       });
 
       const overlays = {
-        Node: nodeLayerGroup
+        Node: nodeLayerGroup,
+        Route: routeLayerGroup
       };
 
       L.control.layers(baseMaps, overlays).addTo(mapView);

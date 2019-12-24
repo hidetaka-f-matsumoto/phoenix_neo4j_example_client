@@ -5949,15 +5949,15 @@ var author$project$App$getToNodeId = function (nodes) {
 		return '';
 	}
 };
-var author$project$App$Route = F2(
-	function (node_ids, total_time) {
-		return {node_ids: node_ids, total_time: total_time};
+var author$project$App$Route = F3(
+	function (color, node_ids, total_time) {
+		return {color: color, node_ids: node_ids, total_time: total_time};
 	});
 var elm$json$Json$Decode$int = _Json_decodeInt;
-var elm$json$Json$Decode$map2 = _Json_map2;
-var author$project$App$routeDecoder = A3(
-	elm$json$Json$Decode$map2,
+var author$project$App$routeDecoder = A4(
+	elm$json$Json$Decode$map3,
 	author$project$App$Route,
+	A2(elm$json$Json$Decode$field, 'color', elm$json$Json$Decode$string),
 	A2(
 		elm$json$Json$Decode$field,
 		'node_ids',
@@ -5970,7 +5970,7 @@ var author$project$App$routesDecoder = A2(
 var author$project$App$getRoutes = function (nodes) {
 	var to = author$project$App$getToNodeId(nodes);
 	var from = author$project$App$getFromNodeId(nodes);
-	var query = 'from=' + (from + ('&to=' + (to + '&limit=3')));
+	var query = 'from=' + (from + ('&to=' + to));
 	var url = 'http://localhost:4000/routes/search?' + query;
 	return elm$http$Http$get(
 		{
@@ -6020,6 +6020,25 @@ var author$project$App$initMapView = _Platform_outgoingPort(
 						elm$json$Json$Encode$string($.name))
 					]));
 		}));
+var elm$json$Json$Encode$int = _Json_wrap;
+var author$project$App$showRoute = _Platform_outgoingPort(
+	'showRoute',
+	elm$json$Json$Encode$list(
+		function ($) {
+			return elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'color',
+						elm$json$Json$Encode$string($.color)),
+						_Utils_Tuple2(
+						'node_ids',
+						elm$json$Json$Encode$list(elm$json$Json$Encode$string)($.node_ids)),
+						_Utils_Tuple2(
+						'total_time',
+						elm$json$Json$Encode$int($.total_time))
+					]));
+		}));
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$App$update = F2(
@@ -6040,7 +6059,7 @@ var author$project$App$update = F2(
 							{
 								state: author$project$App$Success(routes)
 							}),
-						elm$core$Platform$Cmd$none);
+						author$project$App$showRoute(routes));
 				} else {
 					return _Utils_Tuple2(
 						_Utils_update(
@@ -6079,6 +6098,7 @@ var elm$core$List$map = F2(
 			xs);
 	});
 var elm$json$Json$Decode$map = _Json_map1;
+var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -6096,6 +6116,8 @@ var elm$html$Html$li = _VirtualDom_node('li');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
 var elm$html$Html$ul = _VirtualDom_node('ul');
+var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
 var author$project$App$viewSearchResult = function (model) {
 	var _n0 = model.state;
 	switch (_n0.$) {
@@ -6112,18 +6134,24 @@ var author$project$App$viewSearchResult = function (model) {
 				var routing = A2(elm$core$String$join, '-', r.node_ids);
 				return A2(
 					elm$html$Html$li,
-					_List_Nil,
+					_List_fromArray(
+						[
+							A2(elm$html$Html$Attributes$style, 'color', r.color)
+						]),
 					_List_fromArray(
 						[
 							elm$html$Html$text('total_time: '),
 							elm$html$Html$text(total_time),
-							elm$html$Html$text('min, routing: '),
+							elm$html$Html$text('min / routing: '),
 							elm$html$Html$text(routing)
 						]));
 			};
 			return A2(
 				elm$html$Html$div,
-				_List_Nil,
+				_List_fromArray(
+					[
+						A2(elm$html$Html$Attributes$style, 'background-color', '#1f1f1f')
+					]),
 				_List_fromArray(
 					[
 						A2(
